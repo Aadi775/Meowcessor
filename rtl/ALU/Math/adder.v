@@ -26,7 +26,7 @@ module Add #(
     output [WIDTH-1:0] sum,
     output Cout
 );
- 
+    wire Overflow;
     wire [WIDTH-1:0] p_matrix [0:STAGES-1];
     wire [WIDTH-1:0] g_matrix [0:STAGES-1];
  
@@ -67,5 +67,5 @@ module Add #(
  
     assign sum  = p_matrix[0] ^ carry[WIDTH-1:0];
     assign Cout = carry[WIDTH];
- 
+    assign Overflow = carry[WIDTH-1] ^ carry[WIDTH];
 endmodule
