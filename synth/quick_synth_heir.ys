@@ -1,0 +1,9 @@
+read_verilog rtl/ALU/Math/adder.v
+read_verilog rtl/ALU/Math/mul.v
+
+hierarchy -check -top booth_radix4_multiplier
+proc; opt; fsm; opt; memory; techmap; opt
+
+write_verilog -noattr sim/booth_radix4_multiplier_synth.v
+show -format dot -prefix sim/booth_radix4_multiplier_gate
+stat
