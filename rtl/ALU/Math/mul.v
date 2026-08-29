@@ -46,7 +46,7 @@ module booth_radix4_multiplier #(
     wire [WIDTH+1:0] add_sum;
     wire             add_cout;
 
-    Add #(.WIDTH(WIDTH+2)) adder (
+    Add #(.WIDTH(WIDTH+2), .STAGES(7)) adder (
         .a   (A),
         .b   (b_for_add),
         .Cin (add_cin),

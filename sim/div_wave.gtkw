@@ -1,0 +1,26 @@
+[dumpfile] "/home/aadi/Documents/Projects/CPU/sim/div_wave.vcd"
+[savefile] "/home/aadi/Documents/Projects/CPU/sim/div_wave.gtkw"
+[timestart] 0
+[treeopen] div_tb.
+
+@28
+div_tb.clk
+div_tb.rst_n
+div_tb.start
+div_tb.signed_mode
+div_tb.a[31:0]
+div_tb.b[31:0]
+div_tb.quotient[31:0]
+div_tb.remainder[31:0]
+div_tb.done
+div_tb.busy
+div_tb.div_by_zero
+
+@22
+div_tb.dut.running
+div_tb.dut.step_index[4:0]
+div_tb.dut.quotient_work[31:0]
+div_tb.dut.remainder_work[35:0]
+div_tb.dut.dividend_abs[31:0]
+div_tb.dut.divisor_abs[31:0]
+div_tb.dut.dividend_scan[33:0]
