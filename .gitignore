@@ -1,0 +1,12 @@
+# Simulation outputs
+sim/
+
+# Reference projects
+.ref/
+
+# Editor history
+*.history
+*.aux
+*.log
+*.out
+*.toc
