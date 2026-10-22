@@ -87,7 +87,7 @@ module srt_tb;
     reg signed [WIDTH-1:0] rd, rs;
     initial begin
         $dumpfile("sim/div_wave.vcd");
-        $dumpvars(0, div_tb);
+        $dumpvars(0, srt_tb);
         rst_n=0; start=0; a=0; b=0; signed_mode=0;
         #12 rst_n=1;
  

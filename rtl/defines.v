@@ -17,7 +17,7 @@
 `define REG_NUM      32
 `define REG_ADDR_LEN 5
 `define REG_ADDR_BUS 4:0
-`define ALU_OP_BUS   3:0
+`define ALU_OP_BUS   4:0
 
 // ==================  Instruction Opcodes (inst[6:0])  =======================
 `define OP_LUI       7'b0110111   // Load Upper Immediate
@@ -83,30 +83,32 @@
 `define FUNCT7_SUB   7'b0100000   // SUB, SRA
 `define FUNCT7_MULDIV 7'b0000001  // RV32M extension
 
-// ==================  Internal ALU Operation Codes (4-bit)  ==================
+// ==================  Internal ALU Operation Codes (5-bit)  ==================
 //
 //  These are the internal opcodes consumed by alu.v.  They are derived
 //  from instruction fields by the decode stage and select the functional
 //  unit + operation inside the ALU wrapper.
 //
 //  Single-cycle operations:  ALU_OP_ADD  .. ALU_OP_SLTU  (0–9)
-//  Multi-cycle operations:   ALU_OP_MUL  .. ALU_OP_REMU  (10–15)
+//  Multi-cycle operations:   ALU_OP_MUL  .. ALU_OP_MULHU (10–17)
 //
-`define ALU_OP_ADD   4'd0    // rs1 + rs2                     (Kogge-Stone)
-`define ALU_OP_SUB   4'd1    // rs1 - rs2                     (Adder: ~b + 1)
-`define ALU_OP_AND   4'd2    // rs1 & rs2                     (combinational)
-`define ALU_OP_OR    4'd3    // rs1 | rs2                     (combinational)
-`define ALU_OP_XOR   4'd4    // rs1 ^ rs2                     (combinational)
-`define ALU_OP_SLL   4'd5    // rs1 << rs2[4:0]               (shift)
-`define ALU_OP_SRL   4'd6    // rs1 >> rs2[4:0]  (logical)    (shift)
-`define ALU_OP_SRA   4'd7    // rs1 >>> rs2[4:0] (arithmetic) (shift)
-`define ALU_OP_SLT   4'd8    // signed(rs1) < signed(rs2)     (Adder sub)
-`define ALU_OP_SLTU  4'd9    // rs1 < rs2 (unsigned)          (Adder sub)
-`define ALU_OP_MUL   4'd10   // (rs1 × rs2)[31:0]             (Booth radix-4)
-`define ALU_OP_MULH  4'd11   // (rs1 × rs2)[63:32] signed     (Booth radix-4)
-`define ALU_OP_DIV   4'd12   // signed(rs1) / signed(rs2)     (SRT radix-4)
-`define ALU_OP_DIVU  4'd13   // rs1 / rs2 (unsigned)          (SRT radix-4)
-`define ALU_OP_REM   4'd14   // signed(rs1) % signed(rs2)     (SRT radix-4)
-`define ALU_OP_REMU  4'd15   // rs1 % rs2 (unsigned)          (SRT radix-4)
+`define ALU_OP_ADD    5'd0    // rs1 + rs2                     (Kogge-Stone)
+`define ALU_OP_SUB    5'd1    // rs1 - rs2                     (Adder: ~b + 1)
+`define ALU_OP_AND    5'd2    // rs1 & rs2                     (combinational)
+`define ALU_OP_OR     5'd3    // rs1 | rs2                     (combinational)
+`define ALU_OP_XOR    5'd4    // rs1 ^ rs2                     (combinational)
+`define ALU_OP_SLL    5'd5    // rs1 << rs2[4:0]               (shift)
+`define ALU_OP_SRL    5'd6    // rs1 >> rs2[4:0]  (logical)    (shift)
+`define ALU_OP_SRA    5'd7    // rs1 >>> rs2[4:0] (arithmetic) (shift)
+`define ALU_OP_SLT    5'd8    // signed(rs1) < signed(rs2)     (Adder sub)
+`define ALU_OP_SLTU   5'd9    // rs1 < rs2 (unsigned)          (Adder sub)
+`define ALU_OP_MUL    5'd10   // (rs1 × rs2)[31:0]             (Booth radix-4)
+`define ALU_OP_MULH   5'd11   // (rs1 × rs2)[63:32] signed     (Booth radix-4)
+`define ALU_OP_DIV    5'd12   // signed(rs1) / signed(rs2)     (SRT radix-4)
+`define ALU_OP_DIVU   5'd13   // rs1 / rs2 (unsigned)          (SRT radix-4)
+`define ALU_OP_REM    5'd14   // signed(rs1) % signed(rs2)     (SRT radix-4)
+`define ALU_OP_REMU   5'd15   // rs1 % rs2 (unsigned)          (SRT radix-4)
+`define ALU_OP_MULHSU 5'd16   // (signed(rs1) × unsigned(rs2))[63:32] (Booth radix-4)
+`define ALU_OP_MULHU  5'd17   // (unsigned(rs1) × unsigned(rs2))[63:32] (Booth radix-4)
 
 `endif

@@ -33,7 +33,7 @@ module regfile_alu_tb;
 
     // ALU controls
     reg                   alu_start;
-    reg  [3:0]            alu_op;
+    reg  [4:0]            alu_op;
     wire [WIDTH-1:0]      alu_result;
     wire [WIDTH-1:0]      alu_result_hi;
     wire                  alu_done;
@@ -111,7 +111,7 @@ module regfile_alu_tb;
         input [ADDR_WIDTH-1:0] rd,
         input [ADDR_WIDTH-1:0] rs1,
         input [ADDR_WIDTH-1:0] rs2,
-        input [3:0]            op
+        input [4:0]            op
     );
     begin
         @(negedge clk);

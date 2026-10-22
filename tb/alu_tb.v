@@ -23,7 +23,7 @@ module alu_tb;
     reg                  clk = 0;
     reg                  rst_n;
     reg                  start;
-    reg  [3:0]           alu_op;
+    reg  [4:0]           alu_op;
     reg  [WIDTH-1:0]     a, b;
     wire [WIDTH-1:0]     result;
     wire [WIDTH-1:0]     result_hi;
@@ -62,13 +62,15 @@ module alu_tb;
             `ALU_OP_SRA:  op_name = "SRA";
             `ALU_OP_SLT:  op_name = "SLT";
             `ALU_OP_SLTU: op_name = "SLTU";
-            `ALU_OP_MUL:  op_name = "MUL";
-            `ALU_OP_MULH: op_name = "MULH";
-            `ALU_OP_DIV:  op_name = "DIV";
-            `ALU_OP_DIVU: op_name = "DIVU";
-            `ALU_OP_REM:  op_name = "REM";
-            `ALU_OP_REMU: op_name = "REMU";
-            default:      op_name = "UNKNOWN";
+            `ALU_OP_MUL:    op_name = "MUL";
+            `ALU_OP_MULH:   op_name = "MULH";
+            `ALU_OP_MULHSU: op_name = "MULHSU";
+            `ALU_OP_MULHU:  op_name = "MULHU";
+            `ALU_OP_DIV:    op_name = "DIV";
+            `ALU_OP_DIVU:   op_name = "DIVU";
+            `ALU_OP_REM:    op_name = "REM";
+            `ALU_OP_REMU:   op_name = "REMU";
+            default:        op_name = "UNKNOWN";
         endcase
     end
 
@@ -79,7 +81,7 @@ module alu_tb;
     // ========================================================================
 
     task run_single;
-        input [3:0]        op;
+        input [4:0]        op;
         input [WIDTH-1:0]  av, bv;
         input [WIDTH-1:0]  expected;
         begin
@@ -111,7 +113,7 @@ module alu_tb;
     // ========================================================================
 
     task run_multi;
-        input [3:0]        op;
+        input [4:0]        op;
         input [WIDTH-1:0]  av, bv;
         input [WIDTH-1:0]  expected;
         input [WIDTH-1:0]  expected_hi;
@@ -134,7 +136,7 @@ module alu_tb;
                 errors = errors + 1;
                 $display("FAIL op=%0d a=%h b=%h | got=%h exp=%h", op, av, bv, result, expected);
             end
-            if (op == `ALU_OP_MULH && result_hi !== expected_hi) begin
+            if ((op == `ALU_OP_MULH || op == `ALU_OP_MULHSU || op == `ALU_OP_MULHU) && result_hi !== expected_hi) begin
                 errors = errors + 1;
                 $display("FAIL op=%0d a=%h b=%h | got_hi=%h exp_hi=%h", op, av, bv, result_hi, expected_hi);
             end
@@ -148,7 +150,7 @@ module alu_tb;
     // ========================================================================
 
     task run_div;
-        input [3:0]        op;
+        input [4:0]        op;
         input [WIDTH-1:0]  av, bv;
         input [WIDTH-1:0]  expected;
         input              expect_dbz;
@@ -371,16 +373,42 @@ module alu_tb;
         end
 
         // ====================================================================
-        //  MULH — multi-cycle (upper 32 bits)
+        //  MULH — multi-cycle (upper 32 bits signed x signed)
         // ====================================================================
         $display("--- MULH ---");
-        run_multi(`ALU_OP_MULH, 32'hFFFF_FFFF, 32'hFFFF_FFFF, 1, 0);  // (-1)*(-1) = 1 => hi=0
-        run_multi(`ALU_OP_MULH, 32'h7FFF_FFFF, 32'h7FFF_FFFF, 32'h0000_0001, 32'h3FFF_FFFF);
+        run_multi(`ALU_OP_MULH, 32'hFFFF_FFFF, 32'hFFFF_FFFF, 0, 0);  // (-1)*(-1) = 1 => hi=0
+        run_multi(`ALU_OP_MULH, 32'h7FFF_FFFF, 32'h7FFF_FFFF, 32'h3FFF_FFFF, 32'h3FFF_FFFF);
 
         for (i = 0; i < 20; i = i + 1) begin
             ra = $random; rb = $random;
             mul_full = $signed(ra) * $signed(rb);
-            run_multi(`ALU_OP_MULH, ra, rb, mul_full[WIDTH-1:0], mul_full[2*WIDTH-1:WIDTH]);
+            run_multi(`ALU_OP_MULH, ra, rb, mul_full[2*WIDTH-1:WIDTH], mul_full[2*WIDTH-1:WIDTH]);
+        end
+
+        // ====================================================================
+        //  MULHSU — multi-cycle (upper 32 bits signed x unsigned)
+        // ====================================================================
+        $display("--- MULHSU ---");
+        run_multi(`ALU_OP_MULHSU, 32'hFFFF_FFFF, 32'h0000_0002, 32'hFFFF_FFFF, 32'hFFFF_FFFF); // (-1)*2 = -2 => hi=-1
+        run_multi(`ALU_OP_MULHSU, 32'h8000_0000, 32'hFFFF_FFFF, 32'h8000_0000, 32'h8000_0000);
+
+        for (i = 0; i < 20; i = i + 1) begin
+            ra = $random; rb = $random;
+            mul_full = $signed(ra) * $signed({1'b0, rb});
+            run_multi(`ALU_OP_MULHSU, ra, rb, mul_full[2*WIDTH-1:WIDTH], mul_full[2*WIDTH-1:WIDTH]);
+        end
+
+        // ====================================================================
+        //  MULHU — multi-cycle (upper 32 bits unsigned x unsigned)
+        // ====================================================================
+        $display("--- MULHU ---");
+        run_multi(`ALU_OP_MULHU, 32'hFFFF_FFFF, 32'hFFFF_FFFF, 32'hFFFF_FFFE, 32'hFFFF_FFFE);
+        run_multi(`ALU_OP_MULHU, 32'h0000_000A, 32'h0000_0014, 0, 0);
+
+        for (i = 0; i < 20; i = i + 1) begin
+            ra = $random; rb = $random;
+            mul_full = {1'b0, ra} * {1'b0, rb};
+            run_multi(`ALU_OP_MULHU, ra, rb, mul_full[2*WIDTH-1:WIDTH], mul_full[2*WIDTH-1:WIDTH]);
         end
 
         // ====================================================================

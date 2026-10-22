@@ -1,4 +1,4 @@
-//`include "defines.v"
+`include "defines.v"
 // ============================================================================
 //  Meowcessor ALU — Top-Level Arithmetic/Logic Unit Wrapper
 // ============================================================================
@@ -27,7 +27,7 @@ module alu #(
     input                    clk,
     input                    rst_n,
     input                    start,
-    input      [3:0]         alu_op,
+    input      [4:0]         alu_op,
     input      [WIDTH-1:0]   rs1_data,
     input      [WIDTH-1:0]   rs2_data,
     output reg [WIDTH-1:0]   result,
@@ -42,7 +42,7 @@ module alu #(
     // ========================================================================
 
     // Latched operation code for multi-cycle tracking
-    reg  [3:0]          op_reg;
+    reg  [4:0]          op_reg;
     reg                 multicycle_active;
 
     // --- Kogge-Stone adder I/O ---
@@ -88,15 +88,20 @@ module alu #(
     );
 
     // Booth radix-4 multiplier (multi-cycle, clocked)
+    wire mul_signed_rs1;
+    wire mul_signed_rs2;
+
     booth_radix4_multiplier #(.WIDTH(WIDTH)) u_mul (
-        .clk      (clk),
-        .rst_n    (rst_n),
-        .start    (mul_start),
-        .rs1_data (rs1_data),
-        .rs2_data (rs2_data),
-        .result   (mul_result),
-        .done     (mul_done),
-        .busy     (mul_busy)
+        .clk        (clk),
+        .rst_n      (rst_n),
+        .start      (mul_start),
+        .signed_rs1 (mul_signed_rs1),
+        .signed_rs2 (mul_signed_rs2),
+        .rs1_data   (rs1_data),
+        .rs2_data   (rs2_data),
+        .result     (mul_result),
+        .done       (mul_done),
+        .busy       (mul_busy)
     );
 
     // SRT radix-4 divider (multi-cycle, clocked)
@@ -212,7 +217,8 @@ module alu #(
     //  Classify operation: single-cycle vs multi-cycle
     // ========================================================================
 
-    wire is_mul_op = (alu_op == `ALU_OP_MUL) || (alu_op == `ALU_OP_MULH);
+    wire is_mul_op = (alu_op == `ALU_OP_MUL)    || (alu_op == `ALU_OP_MULH) ||
+                     (alu_op == `ALU_OP_MULHSU) || (alu_op == `ALU_OP_MULHU);
     wire is_div_op = (alu_op == `ALU_OP_DIV)  || (alu_op == `ALU_OP_DIVU) ||
                      (alu_op == `ALU_OP_REM)  || (alu_op == `ALU_OP_REMU);
     wire is_multicycle = is_mul_op || is_div_op;
@@ -228,10 +234,14 @@ module alu #(
     //
 
     reg launch_mul;
+    reg launch_mul_signed_rs1;
+    reg launch_mul_signed_rs2;
     reg launch_div;
     reg launch_div_signed;
 
-    // div_signed_mode must be stable when the divider samples it
+    // Mode signals must be stable when sub-units sample them
+    assign mul_signed_rs1  = launch_mul_signed_rs1;
+    assign mul_signed_rs2  = launch_mul_signed_rs2;
     assign div_signed_mode = launch_div_signed;
 
     assign busy         = multicycle_active;
@@ -239,16 +249,18 @@ module alu #(
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            result            <= {WIDTH{1'b0}};
-            result_hi         <= {WIDTH{1'b0}};
-            done              <= 1'b0;
-            op_reg            <= 4'd0;
-            multicycle_active <= 1'b0;
-            mul_start         <= 1'b0;
-            div_start         <= 1'b0;
-            launch_mul        <= 1'b0;
-            launch_div        <= 1'b0;
-            launch_div_signed <= 1'b0;
+            result                <= {WIDTH{1'b0}};
+            result_hi             <= {WIDTH{1'b0}};
+            done                  <= 1'b0;
+            op_reg                <= 5'd0;
+            multicycle_active     <= 1'b0;
+            mul_start             <= 1'b0;
+            div_start             <= 1'b0;
+            launch_mul            <= 1'b0;
+            launch_mul_signed_rs1 <= 1'b0;
+            launch_mul_signed_rs2 <= 1'b0;
+            launch_div            <= 1'b0;
+            launch_div_signed     <= 1'b0;
         end else begin
             done      <= 1'b0;  // default: done is a single-cycle pulse
             mul_start <= 1'b0;  // default: start pulses are one-cycle
@@ -272,7 +284,9 @@ module alu #(
                     multicycle_active <= 1'b1;
 
                     if (is_mul_op) begin
-                        launch_mul <= 1'b1;
+                        launch_mul            <= 1'b1;
+                        launch_mul_signed_rs1 <= (alu_op == `ALU_OP_MUL) || (alu_op == `ALU_OP_MULH) || (alu_op == `ALU_OP_MULHSU);
+                        launch_mul_signed_rs2 <= (alu_op == `ALU_OP_MUL) || (alu_op == `ALU_OP_MULH);
                     end
                     if (is_div_op) begin
                         launch_div        <= 1'b1;
@@ -293,8 +307,10 @@ module alu #(
                         result    <= mul_result[WIDTH-1:0];
                         result_hi <= {WIDTH{1'b0}};
                     end
-                    `ALU_OP_MULH: begin
-                        result    <= mul_result[WIDTH-1:0];
+                    `ALU_OP_MULH,
+                    `ALU_OP_MULHSU,
+                    `ALU_OP_MULHU: begin
+                        result    <= mul_result[2*WIDTH-1:WIDTH];
                         result_hi <= mul_result[2*WIDTH-1:WIDTH];
                     end
                     default: begin
